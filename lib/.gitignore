@@ -1,0 +1,12 @@
+# Abaikan file hasil compile (sampah)
+bin/
+*.class
+
+# Abaikan file settingan lokal VS Code
+.settings/
+.vscode/
+
+# Abaikan file database lokal (opsional, kalau mau datanya fresh terus pas didownload orang)
+# Tapi kalau mau datanya ikut keupload, jangan tulis baris di bawah ini
+# booking_data.dat
+# users.txt
