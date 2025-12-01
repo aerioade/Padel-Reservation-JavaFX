@@ -289,11 +289,11 @@ public class MainApp extends Application {
     private void showAlert(String msg) { new Alert(Alert.AlertType.ERROR, msg).show(); }
 
     private void isiDataLapangan() {
-        listLapangan.add(new Lapangan("LAPANGAN A", "Lapangan Rumput", "sendiri/src/lap1.jpg"));
-        listLapangan.add(new Lapangan("LAPANGAN B", "Lapangan Indoor", "sendiri/src/lap1.jpg"));
-        listLapangan.add(new Lapangan("LAPANGAN C", "Lapangan Outdoor", "sendiri/src/lap1.jpg"));
-        listLapangan.add(new Lapangan("LAPANGAN D", "Lapangan Pro", "sendiri/src/lap1.jpg"));
-        listLapangan.add(new Lapangan("LAPANGAN E", "Lapangan Standard", "sendiri/src/lap1.jpg"));
+        listLapangan.add(new Lapangan("LAPANGAN ANTES", "Jalan Kyai Haji no 10", "lib/img/1.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN BONSAI", "Jalan Sawo 2", "lib/img/2.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN CELURIK", "Jalan Kiwi 5", "lib/img/3.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN DAMPAR", "Jalan Karangan no 11", "lib/img/4.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN ELANG", "Jalan Pelajar No 2", "lib/img/5.jpeg"));
     }
 
     public static void main(String[] args) { launch(args); }
