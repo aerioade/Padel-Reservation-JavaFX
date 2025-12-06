@@ -9,7 +9,13 @@ public class Lapangan {
         this.pathFoto = pathFoto;
     }
 
-    public String getNama() { return nama; }
-    public String getDeskripsi() { return deskripsi; }
-    public String getPathFoto() { return pathFoto; }
+    public String getNama() { 
+    return nama;
+    }
+    public String getDeskripsi() { 
+    return deskripsi;
+    }
+    public String getPathFoto() { 
+    return pathFoto;
+    }
 }

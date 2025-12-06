@@ -10,98 +10,104 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Optional;
 
 public class MainApp extends Application {
 
-    // Panggil Logic dari file sebelah
+    // --- LOGIC BACKEND ---
     private DatabaseHandler db = new DatabaseHandler();
     private UserHandler userHandler = new UserHandler();
     private ArrayList<Lapangan> listLapangan = new ArrayList<>();
     
+    // --- UI STATE ---
     private Stage primaryStage;
     private boolean isAdmin = false;
     private int currentLapIndex = 0;
     
-    // Komponen UI
+    // --- KOMPONEN UI ---
     private Label judulKanan, deskripsiLabel;
     private ImageView gambarView;
     private VBox jadwalContainer;
+
+    // --- SECURITY CONFIG ---
+    private static final String ADMIN_SECRET_CODE = "nohackersyet537219"; // Kode Rahasia
 
     @Override
     public void start(Stage stage) {
         this.primaryStage = stage;
         isiDataLapangan(); 
-        
-        // Mulai dari halaman Login
         showLoginScene();
-        
-        stage.setTitle("Sistem Reservasi Padel (JavaFX)");
+        stage.setTitle("Padel Reservation System (Secured)");
         stage.show();
     }
 
-    // --- HALAMAN 1: LOGIN ---
+    // ==========================================
+    // BAGIAN 1: HALAMAN LOGIN & SIGN UP
+    // ==========================================
     private void showLoginScene() {
         VBox root = new VBox(15);
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #001f3f;"); // BACKGROUND BIRU TUA
+        root.setStyle("-fx-background-color: #001f3f;"); 
 
         Label title = new Label("LOGIN SYSTEM");
         title.setTextFill(Color.WHITE);
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
 
-        TextField userField = new TextField();
-        userField.setPromptText("Username");
-        userField.setMaxWidth(250);
-
-        PasswordField passField = new PasswordField();
-        passField.setPromptText("Password");
-        passField.setMaxWidth(250);
+        TextField userField = new TextField(); userField.setPromptText("Username");
+        PasswordField passField = new PasswordField(); passField.setPromptText("Password");
+        
+        userField.setMaxWidth(250); userField.setStyle("-fx-background-radius: 10;");
+        passField.setMaxWidth(250); passField.setStyle("-fx-background-radius: 10;");
 
         Button btnLogin = new Button("LOGIN");
-        styleButton(btnLogin, "#0074D9"); // Biru Terang
+        styleButton(btnLogin, "#0074D9"); btnLogin.setPrefWidth(250);
 
         Button btnSignUp = new Button("SIGN UP (DAFTAR)");
-        styleButton(btnSignUp, "#2ECC40"); // Hijau
+        styleButton(btnSignUp, "#2ECC40"); btnSignUp.setPrefWidth(250);
 
         Label msgLabel = new Label();
         msgLabel.setTextFill(Color.RED);
 
-        // Aksi Login
+        // Logic Login
         btnLogin.setOnAction(e -> {
-            // Backdoor Admin (biar gampang testing)
-            if(userField.getText().equals("admin") && passField.getText().equals("admin")) {
+            String username = userField.getText();
+            String password = passField.getText();
+            
+            // Backdoor Admin (Bisa dihapus kalau mau full secure)
+            if (username.equals("admin") && password.equals("admin")) {
                 this.isAdmin = true; showMainScene(); return;
             }
-            
-            String role = userHandler.login(userField.getText(), passField.getText());
+
+            String role = userHandler.login(username, password);
             if (role != null) {
                 this.isAdmin = role.equalsIgnoreCase("admin");
                 showMainScene();
             } else {
-                msgLabel.setText("Login Gagal!");
+                msgLabel.setText("Username atau Password Salah!");
             }
         });
 
-        // Aksi Sign Up
         btnSignUp.setOnAction(e -> showSignUpDialog());
 
         root.getChildren().addAll(title, userField, passField, btnLogin, btnSignUp, msgLabel);
-        Scene scene = new Scene(root, 500, 500);
+        Scene scene = new Scene(root, 450, 500);
         primaryStage.setScene(scene);
     }
 
-    // --- HALAMAN 2: DASHBOARD UTAMA ---
+    // ==========================================
+    // BAGIAN 2: DASHBOARD UTAMA
+    // ==========================================
     private void showMainScene() {
         BorderPane mainLayout = new BorderPane();
         mainLayout.setStyle("-fx-background-color: #001f3f;"); 
 
-        // SIDEBAR KIRI
+        // SIDEBAR
         VBox sidebar = new VBox(12);
         sidebar.setPadding(new Insets(20));
-        sidebar.setStyle("-fx-background-color: #001a35; -fx-border-color: #aaaaaa; -fx-border-width: 0 1 0 0;");
+        sidebar.setStyle("-fx-background-color: #001a35; -fx-border-color: #333333; -fx-border-width: 0 1 0 0;");
         sidebar.setPrefWidth(260);
 
         Label lblDaftar = new Label("DAFTAR LAPANGAN");
@@ -118,18 +124,16 @@ public class MainApp extends Application {
             sidebar.getChildren().add(btnLap);
         }
         
-        // Spacer & Logout
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
+        Region spacer = new Region(); VBox.setVgrow(spacer, Priority.ALWAYS);
         Button btnLogout = new Button("LOG OUT");
         styleButton(btnLogout, "#FF4136");
         btnLogout.setMaxWidth(Double.MAX_VALUE);
-        btnLogout.setOnAction(e -> showLoginScene()); // Balik ke Login
+        btnLogout.setOnAction(e -> showLoginScene());
         
         sidebar.getChildren().addAll(spacer, btnLogout);
         mainLayout.setLeft(sidebar);
 
-        // KONTEN TENGAH
+        // KONTEN
         VBox content = new VBox(15);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.TOP_CENTER);
@@ -139,8 +143,7 @@ public class MainApp extends Application {
         judulKanan.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
 
         gambarView = new ImageView();
-        gambarView.setFitWidth(450);
-        gambarView.setFitHeight(280);
+        gambarView.setFitWidth(450); gambarView.setFitHeight(280);
         gambarView.setPreserveRatio(true);
 
         deskripsiLabel = new Label();
@@ -163,7 +166,7 @@ public class MainApp extends Application {
         primaryStage.centerOnScreen();
     }
 
-    // --- UPDATE DETAIL & SLOT JAM ---
+    // --- UPDATE DETAIL ---
     private void updateDetail(int index) {
         this.currentLapIndex = index;
         Lapangan lap = listLapangan.get(index);
@@ -172,11 +175,8 @@ public class MainApp extends Application {
         
         try {
             File fileImg = new File(lap.getPathFoto());
-            if (fileImg.exists()) {
-                gambarView.setImage(new Image(fileImg.toURI().toString()));
-            } else {
-                gambarView.setImage(null);
-            }
+            if (fileImg.exists()) gambarView.setImage(new Image(fileImg.toURI().toString()));
+            else gambarView.setImage(null);
         } catch (Exception e) { e.printStackTrace(); }
 
         jadwalContainer.getChildren().clear();
@@ -203,41 +203,117 @@ public class MainApp extends Application {
             } else {
                 btnJam.setText(jam[i] + " (Tersedia)");
                 btnJam.setStyle("-fx-background-color: #DDDDDD; -fx-text-fill: black; -fx-background-radius: 20;");
+                btnJam.setOnMouseEntered(e -> btnJam.setStyle("-fx-background-color: #AAAAAA; -fx-text-fill: black; -fx-background-radius: 20;"));
+                btnJam.setOnMouseExited(e -> btnJam.setStyle("-fx-background-color: #DDDDDD; -fx-text-fill: black; -fx-background-radius: 20;"));
                 btnJam.setOnAction(e -> showBookingDialog(jam[idxJam], idxJam));
             }
             jadwalContainer.getChildren().add(btnJam);
         }
     }
 
-    // --- FORM RESERVASI ---
+    // ==========================================
+    // BAGIAN 3: SIGN UP SECURE (FITUR BARU)
+    // ==========================================
+    private void showSignUpDialog() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Sign Up");
+        dialog.setHeaderText("Daftar User Baru");
+        
+        ButtonType daftarType = new ButtonType("Daftar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(daftarType, ButtonType.CANCEL);
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20, 50, 10, 10));
+        
+        TextField user = new TextField(); user.setPromptText("Username");
+        PasswordField pass = new PasswordField(); pass.setPromptText("Password");
+        ComboBox<String> roleBox = new ComboBox<>();
+        roleBox.getItems().addAll("user", "admin");
+        roleBox.setValue("user");
+        
+        grid.add(new Label("Username:"), 0, 0); grid.add(user, 1, 0);
+        grid.add(new Label("Password:"), 0, 1); grid.add(pass, 1, 1);
+        grid.add(new Label("Role:"), 0, 2); grid.add(roleBox, 1, 2);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // --- LOGIC TOMBOL DAFTAR + SECURITY CHECK ---
+        final Button btnDaftar = (Button) dialog.getDialogPane().lookupButton(daftarType);
+        
+        btnDaftar.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String username = user.getText();
+            String password = pass.getText();
+            String role = roleBox.getValue();
+
+            // 1. Validasi Input Kosong
+            if (username.isEmpty() || password.isEmpty()) {
+                showAlert("Username dan Password tidak boleh kosong!");
+                event.consume(); 
+                return;
+            }
+
+            // 2. SECURITY CHECK: Jika daftar jadi ADMIN, minta KODE RAHASIA
+            if (role.equals("admin")) {
+                TextInputDialog secretDialog = new TextInputDialog();
+                secretDialog.setTitle("Security Check");
+                secretDialog.setHeaderText("Verifikasi Admin");
+                secretDialog.setContentText("Masukkan Kode Rahasia Admin:");
+                
+                Optional<String> result = secretDialog.showAndWait();
+                if (result.isPresent()) {
+                    if (!result.get().equals(ADMIN_SECRET_CODE)) {
+                        showAlert("YAHAHAHA PENGEN BANGET JADI ADMIN YA.");
+                        event.consume(); // Batalkan Sign Up
+                        return;
+                    }
+                } else {
+                    event.consume(); // Batal kalau dicancel
+                    return;
+                }
+            }
+
+            // ... (kode security check admin di atasnya tetap sama) ...
+
+            // 3. Jika Lolos Security, Simpan ke Database Text
+            boolean success = userHandler.signUp(username, password, role);
+            
+            if (success) {
+                showAlertInfo("Sign Up Berhasil! Role: " + role + "\nSilakan Login.");
+            } else {
+                // UPDATE PESAN ERROR DISINI
+                showAlert("Gagal Sign Up!\nKemungkinan Username '" + username + "' sudah dipakai.\nSilakan gunakan username lain.");
+            }
+        });
+
+        dialog.showAndWait();
+    }
+
+    // --- FORM BOOKING ---
     private void showBookingDialog(String jamText, int indexJam) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Form Booking");
         dialog.setHeaderText("Booking: " + jamText);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        ButtonType bookType = new ButtonType("Konfirmasi", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(bookType, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
         grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20, 150, 10, 10));
-
-        TextField nama = new TextField(); nama.setPromptText("Nama");
-        TextField hp = new TextField(); hp.setPromptText("HP (8-15 Digit)");
-
+        TextField nama = new TextField(); TextField hp = new TextField();
         grid.add(new Label("Nama:"), 0, 0); grid.add(nama, 1, 0);
         grid.add(new Label("HP:"), 0, 1); grid.add(hp, 1, 1);
         dialog.getDialogPane().setContent(grid);
 
-        final Button btnOk = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        final Button btnOk = (Button) dialog.getDialogPane().lookupButton(bookType);
         btnOk.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-            if (nama.getText().isEmpty() || hp.getText().isEmpty()) { showAlert("Isi semua data!"); event.consume(); return; }
-            if (!nama.getText().matches("[a-zA-Z ]+")) { showAlert("Nama harus huruf!"); event.consume(); return; }
-            if (!hp.getText().matches("\\d+") || hp.getText().length() < 8 || hp.getText().length() > 15) { 
-                showAlert("HP Invalid!"); event.consume(); return; 
-            }
+            String n = nama.getText(); String h = hp.getText();
+            if (n.isEmpty() || h.isEmpty()) { showAlert("Isi semua data!"); event.consume(); return; }
+            if (!n.matches("[a-zA-Z ]+")) { showAlert("Nama harus huruf!"); event.consume(); return; }
+            if (!h.matches("\\d+") || h.length() < 8 || h.length() > 15) { showAlert("HP Invalid (8-15 digit)!"); event.consume(); return; }
 
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Yakin data benar?");
             Optional<ButtonType> res = confirm.showAndWait();
             if (res.isPresent() && res.get() == ButtonType.OK) {
-                db.simpanBooking(currentLapIndex, indexJam, nama.getText(), hp.getText());
+                db.simpanBooking(currentLapIndex, indexJam, n, h);
                 updateDetail(currentLapIndex);
             } else {
                 event.consume();
@@ -254,47 +330,26 @@ public class MainApp extends Application {
             updateDetail(currentLapIndex);
         }
     }
-    
-    private void showSignUpDialog() {
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Sign Up");
-        dialog.setHeaderText("Daftar User Baru");
-        ButtonType daftar = new ButtonType("Daftar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(daftar, ButtonType.CANCEL);
-        
-        GridPane grid = new GridPane();
-        grid.setHgap(10); grid.setVgap(10); grid.setPadding(new Insets(20, 50, 10, 10));
-        TextField user = new TextField(); TextField pass = new PasswordField();
-        ComboBox<String> role = new ComboBox<>(); role.getItems().addAll("user", "admin"); role.setValue("user");
-        
-        grid.add(new Label("User:"), 0, 0); grid.add(user, 1, 0);
-        grid.add(new Label("Pass:"), 0, 1); grid.add(pass, 1, 1);
-        grid.add(new Label("Role:"), 0, 2); grid.add(role, 1, 2);
-        dialog.getDialogPane().setContent(grid);
-        
-        dialog.setResultConverter(btn -> {
-            if(btn == daftar) userHandler.signUp(user.getText(), pass.getText(), role.getValue());
-            return null;
-        });
-        dialog.showAndWait();
-    }
 
+    // Helpers
     private void styleButton(Button btn, String hex) {
-        String base = "-fx-background-color: " + hex + "; -fx-text-fill: white; -fx-background-radius: 30; -fx-font-weight: bold;";
+        String base = "-fx-background-color: " + hex + "; -fx-text-fill: white; -fx-background-radius: 30; -fx-font-weight: bold; -fx-cursor: hand;";
         btn.setStyle(base);
         btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: derive(" + hex + ", 20%); -fx-text-fill: white; -fx-background-radius: 30;"));
         btn.setOnMouseExited(e -> btn.setStyle(base));
     }
-    
     private void showAlert(String msg) { new Alert(Alert.AlertType.ERROR, msg).show(); }
+    private void showAlertInfo(String msg) { new Alert(Alert.AlertType.INFORMATION, msg).show(); }
 
     private void isiDataLapangan() {
-        listLapangan.add(new Lapangan("LAPANGAN ANTES", "Jalan Kyai Haji no 10", "lib/img/1.jpeg"));
-        listLapangan.add(new Lapangan("LAPANGAN BONSAI", "Jalan Sawo 2", "lib/img/2.jpeg"));
-        listLapangan.add(new Lapangan("LAPANGAN CELURIK", "Jalan Kiwi 5", "lib/img/3.jpeg"));
-        listLapangan.add(new Lapangan("LAPANGAN DAMPAR", "Jalan Karangan no 11", "lib/img/4.jpeg"));
-        listLapangan.add(new Lapangan("LAPANGAN ELANG", "Jalan Pelajar No 2", "lib/img/5.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN A", "Rumput Sintetis - Pasar Gedhe", "lib/img/1.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN B", "Indoor AC - Manahan", "lib/img/2.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN C", "Outdoor - Palur", "lib/img/3.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN D", "Pro - Kartasura", "lib/img/4.jpeg"));
+        listLapangan.add(new Lapangan("LAPANGAN E", "Standard - UNS", "lib/img/5.jpeg"));
     }
 
-    public static void main(String[] args) { launch(args); }
+    public static void main(String[] args) {
+        launch(args);
+    }
 }
